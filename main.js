@@ -26,6 +26,23 @@
     errorDirectLink.href = url;
   }
 
+  function isStandaloneMode() {
+    return window.matchMedia('(display-mode: standalone)').matches ||
+      window.matchMedia('(display-mode: fullscreen)').matches ||
+      window.navigator.standalone === true;
+  }
+
+  function shouldRedirectToGas() {
+    const mode = String(config.launchMode || 'auto').toLowerCase();
+    return mode === 'redirect' || (mode === 'auto' && isStandaloneMode());
+  }
+
+  function redirectToGas(gasUrl) {
+    loader.querySelector('strong').textContent = 'กำลังเข้าสู่ระบบ AYA…';
+    loader.querySelector('span').textContent = 'เปิด GAS Web App ในหน้าต่างเดียวกัน';
+    window.setTimeout(() => window.location.replace(gasUrl), Number(config.redirectDelayMs) || 500);
+  }
+
   function openGasApp() {
     const gasUrl = config.gasWebAppUrl;
     if (!validGasUrl(gasUrl)) {
@@ -36,6 +53,13 @@
     }
 
     setDirectLinks(gasUrl);
+    if (!navigator.onLine) return;
+
+    if (shouldRedirectToGas()) {
+      redirectToGas(gasUrl);
+      return;
+    }
+
     frame.src = gasUrl;
     loadTimer = window.setTimeout(() => {
       if (!loader.hidden) {
@@ -53,6 +77,10 @@
 
   document.getElementById('reloadButton').addEventListener('click', () => {
     if (!validGasUrl(config.gasWebAppUrl)) return;
+    if (shouldRedirectToGas()) {
+      redirectToGas(config.gasWebAppUrl);
+      return;
+    }
     loader.hidden = false;
     frameError.hidden = true;
     const separator = config.gasWebAppUrl.includes('?') ? '&' : '?';
@@ -73,7 +101,7 @@
       frameError.querySelector('h1').textContent = 'เปิดระบบในกรอบไม่สำเร็จ';
       frameError.querySelector('p').textContent = 'กดรีเฟรช หรือเปิด GAS Web App โดยตรง';
       frameError.hidden = true;
-      frame.src = config.gasWebAppUrl;
+      openGasApp();
     }
   }
 

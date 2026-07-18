@@ -11,6 +11,7 @@ https://script.google.com/macros/s/AKfycbw05VtD2oHFcwDsmO4TMgzBIwdFPcbvimvSxfnO7
 ## สิ่งที่ชุดนี้ทำ
 
 - แสดง GAS Web App ภายใน PWA shell ผ่าน `iframe`
+- เมื่อเปิดจากไอคอน PWA ระบบจะเปิด GAS แบบ top-level ในหน้าต่างเดียวกัน เพื่อหลีกเลี่ยงการค้างจากข้อจำกัด iframe/login ของ Google
 - รองรับการติดตั้งแบบ PWA ด้วย Web App Manifest
 - รองรับไอคอน UBCH แบบปกติ, Apple Touch และ maskable
 - อนุญาตกล้องให้ GAS iframe เพื่อใช้สแกน QR เป็นทางเลือก
@@ -66,9 +67,24 @@ https://script.google.com/macros/s/AKfycbw05VtD2oHFcwDsmO4TMgzBIwdFPcbvimvSxfnO7
 window.AYA_PWA_CONFIG = Object.freeze({
   appName: 'AYA Ward Pickup',
   gasWebAppUrl: 'วาง_URL_ที่ลงท้ายด้วย_/exec',
-  frameTimeoutMs: 15000
+  launchMode: 'auto',
+  redirectDelayMs: 500,
+  frameTimeoutMs: 12000
 });
 ```
+
+`launchMode: 'auto'` หมายถึงเปิดผ่าน iframe เฉพาะตอนเข้าจากเบราว์เซอร์เพื่อใช้หน้าติดตั้ง แต่เมื่อเปิดจากไอคอน PWA จะ redirect ไป GAS ในหน้าต่างเดียวกันอัตโนมัติ หากองค์กรบล็อก iframe แม้ในเบราว์เซอร์ สามารถเปลี่ยนเป็น `launchMode: 'redirect'` ได้
+
+## หาก PWA เดิมค้างที่ “กำลังเปิดระบบ”
+
+หลัง Deploy เวอร์ชันนี้:
+
+1. ปิด PWA ให้หมด
+2. เปิด GitHub Pages URL ใน Chrome/Safari แล้วกดรีเฟรชหนึ่งครั้ง
+3. ปิดแล้วเปิด PWA จากไอคอนใหม่
+4. หากยังใช้ cache เดิม ให้ลบ PWA แล้วติดตั้งใหม่
+
+Service worker เวอร์ชันนี้ใช้ cache `aya-pickup-pwa-v2` และโหลด `index.html`, `main.js`, `config.js` แบบ network-first เพื่อรับการแก้ไขได้เร็วขึ้น
 
 จากนั้น push เข้า `main` ใหม่
 
@@ -90,4 +106,3 @@ window.AYA_PWA_CONFIG = Object.freeze({
 - ทดสอบกล้องและอนุญาต Camera permission
 - ทดสอบปุ่มรายงานและ Export Excel
 - ปิดอินเทอร์เน็ตและยืนยันว่าระบบไม่อนุญาตให้ทำรายการ
-

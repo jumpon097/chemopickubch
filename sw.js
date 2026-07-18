@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aya-pickup-pwa-v1';
+const CACHE_NAME = 'aya-pickup-pwa-v2';
 const SHELL_FILES = [
   './',
   './index.html',
@@ -43,6 +43,20 @@ self.addEventListener('fetch', event => {
           return response;
         })
         .catch(() => caches.match(event.request).then(response => response || caches.match('./offline.html')))
+    );
+    return;
+  }
+
+  const networkFirstFiles = ['index.html', 'main.js', 'config.js', 'manifest.webmanifest'];
+  if (networkFirstFiles.some(file => requestUrl.pathname.endsWith('/' + file))) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
     );
     return;
   }
