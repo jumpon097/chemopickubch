@@ -1,12 +1,14 @@
-const CACHE_NAME = 'aya-pickup-pwa-v2';
-const SHELL_FILES = [
+const CACHE_NAME = 'aya-pickup-native-v2.0.0';
+const APP_SHELL = [
   './',
   './index.html',
-  './styles.css',
   './config.js',
-  './main.js',
+  './api-client.js',
+  './pwa.js',
   './manifest.webmanifest',
   './offline.html',
+  './vendor/html5-qrcode.min.js',
+  './vendor/qrcode.min.js',
   './icons/favicon-64.png',
   './icons/apple-touch-icon.png',
   './icons/icon-192.png',
@@ -15,7 +17,7 @@ const SHELL_FILES = [
 ];
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(SHELL_FILES)));
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)));
   self.skipWaiting();
 });
 
@@ -28,11 +30,8 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  const requestUrl = new URL(event.request.url);
-
-  // GAS is cross-origin and contains live medication data. Never cache it.
-  if (requestUrl.origin !== self.location.origin) return;
-  if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+  if (event.request.method !== 'GET' || url.origin !== self.location.origin) return;
 
   if (event.request.mode === 'navigate') {
     event.respondWith(
@@ -42,13 +41,13 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
           return response;
         })
-        .catch(() => caches.match(event.request).then(response => response || caches.match('./offline.html')))
+        .catch(() => caches.match(event.request).then(value => value || caches.match('./offline.html')))
     );
     return;
   }
 
-  const networkFirstFiles = ['index.html', 'main.js', 'config.js', 'manifest.webmanifest'];
-  if (networkFirstFiles.some(file => requestUrl.pathname.endsWith('/' + file))) {
+  const networkFirst = ['index.html', 'config.js', 'api-client.js', 'pwa.js', 'manifest.webmanifest'];
+  if (networkFirst.some(name => url.pathname.endsWith('/' + name))) {
     event.respondWith(
       fetch(event.request)
         .then(response => {
@@ -62,15 +61,12 @@ self.addEventListener('fetch', event => {
   }
 
   event.respondWith(
-    caches.match(event.request).then(cached => {
-      const network = fetch(event.request).then(response => {
-        if (response.ok) {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-        }
-        return response;
-      });
-      return cached || network;
-    })
+    caches.match(event.request).then(cached => cached || fetch(event.request).then(response => {
+      if (response.ok) {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+      }
+      return response;
+    }))
   );
 });

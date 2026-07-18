@@ -1,7 +1,5 @@
-window.AYA_PWA_CONFIG = Object.freeze({
+window.AYA_APP_CONFIG = Object.freeze({
   appName: 'AYA Ward Pickup',
-  gasWebAppUrl: 'https://script.google.com/macros/s/AKfycbw05VtD2oHFcwDsmO4TMgzBIwdFPcbvimvSxfnO75r21uPlVWsa7WhHspQj6yYRvns6/exec',
-  launchMode: 'auto',
-  redirectDelayMs: 500,
-  frameTimeoutMs: 12000
+  apiUrl: 'https://aya-pickup-api.jumpon-khun.workers.dev/api',
+  apiTimeoutMs: 60000
 });
